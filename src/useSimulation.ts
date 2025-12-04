@@ -25,6 +25,7 @@ export const useSimulation = () => {
     queueMode: 'FIFO',
     queueTimeout: 5000,
     maxQueueSize: 0, // 0 = unlimited
+    adaptiveThreshold: 5, // switch to LIFO when queue size >= this
     isRunning: false,
     spawnDuration: 60,
   });
@@ -114,8 +115,17 @@ export const useSimulation = () => {
       const queuedRequests = prev.filter(r => r.status === 'queued');
       if (queuedRequests.length === 0) return prev;
 
+      // Determine effective mode for Adaptive LIFO
+      let effectiveMode: 'FIFO' | 'LIFO';
+      if (settings.queueMode === 'Adaptive LIFO') {
+        // Use LIFO when queue is at or above threshold, FIFO otherwise
+        effectiveMode = queuedRequests.length >= settings.adaptiveThreshold ? 'LIFO' : 'FIFO';
+      } else {
+        effectiveMode = settings.queueMode;
+      }
+
       // FIFO: take first, LIFO: take last
-      const nextRequest = settings.queueMode === 'FIFO'
+      const nextRequest = effectiveMode === 'FIFO'
         ? queuedRequests[0]
         : queuedRequests[queuedRequests.length - 1];
 
@@ -160,7 +170,7 @@ export const useSimulation = () => {
           : r
       );
     });
-  }, [settings.queueMode]);
+  }, [settings.queueMode, settings.adaptiveThreshold]);
 
   // Clean up completed/dropped/wasted/rejected requests after animation
   useEffect(() => {

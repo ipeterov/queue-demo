@@ -146,13 +146,30 @@ export const Settings = ({ settings, onChange, onToggle, onStartTimed, onReset }
                 Mode:
                 <select
                   value={settings.queueMode}
-                  onChange={e => onChange({ ...settings, queueMode: e.target.value as 'FIFO' | 'LIFO' })}
+                  onChange={e => onChange({ ...settings, queueMode: e.target.value as 'FIFO' | 'LIFO' | 'Adaptive LIFO' })}
                 >
                   <option value="FIFO">FIFO</option>
                   <option value="LIFO">LIFO</option>
+                  <option value="Adaptive LIFO">Adaptive LIFO</option>
                 </select>
               </label>
             </div>
+
+            {settings.queueMode === 'Adaptive LIFO' && (
+              <div className="setting-group">
+                <label>
+                  LIFO Threshold: {settings.adaptiveThreshold}
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    step="1"
+                    value={settings.adaptiveThreshold}
+                    onChange={e => onChange({ ...settings, adaptiveThreshold: parseInt(e.target.value) })}
+                  />
+                </label>
+              </div>
+            )}
           </div>
         </div>
 
