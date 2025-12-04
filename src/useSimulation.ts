@@ -32,6 +32,7 @@ export const useSimulation = () => {
   const [stats, setStats] = useState<Stats>({
     completed: 0,
     dropped: 0,
+    wasted: 0,
     totalTimes: [],
   });
 
@@ -78,18 +79,13 @@ export const useSimulation = () => {
         return r;
       });
 
-      // Count newly dropped (only queued -> dropped, not processing -> timed_out_processing)
+      // Count newly dropped (queued -> dropped)
       const newlyDropped = updated.filter(
         (r, i) => r.status === 'dropped' && prev[i]?.status === 'queued'
       ).length;
 
-      // Count newly timed out during processing (client got 504)
-      const newlyTimedOut = updated.filter(
-        (r, i) => r.status === 'timed_out_processing' && prev[i]?.status === 'processing'
-      ).length;
-
-      if (newlyDropped + newlyTimedOut > 0) {
-        setStats(s => ({ ...s, dropped: s.dropped + newlyDropped + newlyTimedOut }));
+      if (newlyDropped > 0) {
+        setStats(s => ({ ...s, dropped: s.dropped + newlyDropped }));
       }
 
       return updated;
@@ -132,6 +128,7 @@ export const useSimulation = () => {
           }
           // If timed out during processing, server finishes but response is wasted
           if (request && request.status === 'timed_out_processing') {
+            setStats(s => ({ ...s, wasted: s.wasted + 1 }));
             return p.map(r =>
               r.id === nextRequest.id
                 ? { ...r, status: 'wasted' as const, completedAt: Date.now() }
@@ -220,7 +217,7 @@ export const useSimulation = () => {
 
   const reset = useCallback(() => {
     setRequests([]);
-    setStats({ completed: 0, dropped: 0, totalTimes: [] });
+    setStats({ completed: 0, dropped: 0, wasted: 0, totalTimes: [] });
     processingRef.current = false;
   }, []);
 

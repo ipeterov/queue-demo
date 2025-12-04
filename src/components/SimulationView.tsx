@@ -120,6 +120,7 @@ export const SimulationView = ({ requests, stats, queueTimeout }: Props) => {
       }
 
       case 'processing':
+      case 'timed_out_processing': // stays in processing zone while server finishes
         return { x: zones.processing.x, y: zones.processing.y };
 
       case 'completed':
@@ -129,6 +130,7 @@ export const SimulationView = ({ requests, stats, queueTimeout }: Props) => {
         };
 
       case 'dropped':
+      case 'wasted': // goes to failed zone since client got 504
         return {
           x: zones.failed.x,
           y: zones.failed.y,
@@ -167,19 +169,28 @@ export const SimulationView = ({ requests, stats, queueTimeout }: Props) => {
 
         <div className="zone-arrow">→</div>
 
-        {/* Results column with Failed and Processed zones */}
+        {/* Results column with Processed and Failed zones */}
         <div className="results-column">
-          <div className="zone failed-zone">
-            <h4>Failed</h4>
-            <div className="zone-content">
-              <div className="failed-counter">{stats.dropped}</div>
-            </div>
-          </div>
-
           <div className="zone processed-zone">
             <h4>Processed ({stats.completed})</h4>
             <div className="zone-content">
               <Percentiles totalTimes={stats.totalTimes} />
+            </div>
+          </div>
+
+          <div className="zone failed-zone">
+            <h4>Failed ({stats.dropped + stats.wasted})</h4>
+            <div className="zone-content">
+              <div className="failed-breakdown">
+                <div className="failed-stat">
+                  <span className="failed-label">Queued:</span>
+                  <span className="failed-value">{stats.dropped}</span>
+                </div>
+                <div className="failed-stat">
+                  <span className="failed-label">Wasted:</span>
+                  <span className="failed-value">{stats.wasted}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -195,7 +206,9 @@ export const SimulationView = ({ requests, stats, queueTimeout }: Props) => {
               request.status === 'spawning' ? zones.spawn.width :
               request.status === 'queued' ? zones.queue.width :
               request.status === 'processing' ? zones.processing.width :
+              request.status === 'timed_out_processing' ? zones.processing.width :
               request.status === 'dropped' ? zones.failed.width :
+              request.status === 'wasted' ? zones.failed.width :
               request.status === 'completed' ? zones.processed.width :
               zones.processing.width
             ) : 100}

@@ -21,6 +21,7 @@ export interface Settings {
 
 export interface Stats {
   completed: number;
-  dropped: number;
+  dropped: number; // timed out while queued (never started processing)
+  wasted: number; // timed out during processing (server finished but client got 504)
   totalTimes: number[]; // array of total time from spawn to completion (for histogram)
 }

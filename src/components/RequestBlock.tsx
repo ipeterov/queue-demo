@@ -95,6 +95,21 @@ export const RequestBlock = ({ request, targetPosition, queueTimeout, width }: P
     }
   }, [request.status]);
 
+  // Wasted animation (server finished but client already got 504)
+  useEffect(() => {
+    if (!blockRef.current) return;
+
+    if (request.status === 'wasted') {
+      animate(blockRef.current, {
+        scale: [1, 0],
+        opacity: [1, 0],
+        rotate: '15deg',
+        duration: 800,
+        easing: 'easeInBack',
+      });
+    }
+  }, [request.status]);
+
   // Calculate progress percentages - timeout is based on createdAt (total time since spawn)
   const getTimeoutProgress = () => {
     if (request.status !== 'queued' && request.status !== 'processing') return 0;
@@ -121,6 +136,10 @@ export const RequestBlock = ({ request, targetPosition, queueTimeout, width }: P
         return timeoutProgress > 0.7 ? '#f87171' : '#facc15';
       case 'processing':
         return timeoutProgress > 0.7 ? '#f87171' : '#60a5fa';
+      case 'timed_out_processing':
+        return '#f87171'; // red - client got 504, but server still working
+      case 'wasted':
+        return '#f87171'; // red - server finished but response was wasted
       case 'dropped':
         return '#f87171';
       case 'completed':
@@ -139,7 +158,11 @@ export const RequestBlock = ({ request, targetPosition, queueTimeout, width }: P
         return 20;
       case 'processing':
         return 30;
+      case 'timed_out_processing':
+        return 30;
       case 'completed':
+        return 25;
+      case 'wasted':
         return 25;
       case 'dropped':
         return 25;
@@ -186,7 +209,7 @@ export const RequestBlock = ({ request, targetPosition, queueTimeout, width }: P
             top: 0,
             bottom: 0,
             width: `${processingProgress * 100}%`,
-            backgroundColor: '#60a5fa',
+            backgroundColor: request.status === 'timed_out_processing' ? '#f87171' : '#60a5fa',
             transition: 'width 0.05s linear',
           }}
         />
@@ -204,6 +227,8 @@ export const RequestBlock = ({ request, targetPosition, queueTimeout, width }: P
           }}
         >
           {request.status === 'processing'
+            ? `${Math.round(processingProgress * 100)}%`
+            : request.status === 'timed_out_processing'
             ? `${Math.round(processingProgress * 100)}%`
             : `${(request.processingTime / 1000).toFixed(1)}s`}
         </div>
@@ -243,6 +268,8 @@ export const RequestBlock = ({ request, targetPosition, queueTimeout, width }: P
         >
           {(request.status === 'queued' || request.status === 'processing')
             ? `${(timeRemaining / 1000).toFixed(1)}s`
+            : request.status === 'timed_out_processing'
+            ? '504'
             : 'timeout'}
         </div>
       </div>
