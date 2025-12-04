@@ -198,6 +198,13 @@ header p {
   cursor: pointer;
 }
 
+.setting-help {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
 .setting-buttons {
   display: flex;
   flex-direction: column;

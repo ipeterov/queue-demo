@@ -10,13 +10,15 @@ interface Props {
 }
 
 export const Settings = ({ settings, onChange, onToggle, onStartTimed, onReset }: Props) => {
-  // Generate distribution preview
+  // Generate distribution preview with fixed scale (0 to 20s)
   const distributionBars = useMemo(() => {
     const { avgProcessingTime, variation } = settings;
     const minMultiplier = 1 - variation * 0.9;
     const maxMultiplier = 1 + variation * 9;
-    const minTime = avgProcessingTime * minMultiplier;
-    const maxTime = avgProcessingTime * maxMultiplier;
+
+    // Fixed scale: 0 to max processing time * 2 (20s)
+    const scaleMin = 0;
+    const scaleMax = 20000; // 20 seconds
 
     // Create buckets for histogram
     const numBuckets = 20;
@@ -30,13 +32,13 @@ export const Settings = ({ settings, onChange, onToggle, onStartTimed, onReset }
       const time = avgProcessingTime * multiplier;
       const bucketIndex = Math.min(
         numBuckets - 1,
-        Math.floor(((time - minTime) / (maxTime - minTime)) * numBuckets)
+        Math.max(0, Math.floor((time / scaleMax) * numBuckets))
       );
       buckets[bucketIndex]++;
     }
 
     const maxBucket = Math.max(...buckets);
-    return { buckets, maxBucket, minTime, maxTime };
+    return { buckets, maxBucket, scaleMin, scaleMax };
   }, [settings.avgProcessingTime, settings.variation]);
 
   return (
@@ -99,8 +101,8 @@ export const Settings = ({ settings, onChange, onToggle, onStartTimed, onReset }
                 ))}
               </div>
               <div className="distribution-labels">
-                <span>{(distributionBars.minTime / 1000).toFixed(1)}s</span>
-                <span>{(distributionBars.maxTime / 1000).toFixed(1)}s</span>
+                <span>{(distributionBars.scaleMin / 1000).toFixed(0)}s</span>
+                <span>{(distributionBars.scaleMax / 1000).toFixed(0)}s</span>
               </div>
             </div>
           </div>
@@ -122,6 +124,7 @@ export const Settings = ({ settings, onChange, onToggle, onStartTimed, onReset }
                   onChange={e => onChange({ ...settings, queueTimeout: parseFloat(e.target.value) })}
                 />
               </label>
+              <div className="setting-help">Load balancer timeout. After this, client gets 504.</div>
             </div>
 
             <div className="setting-group">
@@ -139,6 +142,7 @@ export const Settings = ({ settings, onChange, onToggle, onStartTimed, onReset }
                   }}
                 />
               </label>
+              <div className="setting-help">New requests are rejected when queue is full.</div>
             </div>
 
             <div className="setting-group">
@@ -153,6 +157,11 @@ export const Settings = ({ settings, onChange, onToggle, onStartTimed, onReset }
                   <option value="Adaptive LIFO">Adaptive LIFO</option>
                 </select>
               </label>
+              <div className="setting-help">
+                {settings.queueMode === 'FIFO' && 'First in, first out. Fair but can have high tail latency.'}
+                {settings.queueMode === 'LIFO' && 'Last in, first out. Newer requests processed first, older ones may timeout.'}
+                {settings.queueMode === 'Adaptive LIFO' && 'FIFO when queue is small, switches to LIFO above threshold.'}
+              </div>
             </div>
 
             {settings.queueMode === 'Adaptive LIFO' && (
@@ -168,6 +177,7 @@ export const Settings = ({ settings, onChange, onToggle, onStartTimed, onReset }
                     onChange={e => onChange({ ...settings, adaptiveThreshold: parseInt(e.target.value) })}
                   />
                 </label>
+                <div className="setting-help">Switch to LIFO when queue size reaches this.</div>
               </div>
             )}
           </div>
