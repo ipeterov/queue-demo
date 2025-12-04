@@ -6,7 +6,7 @@ import { Percentiles } from './Percentiles';
 interface Props {
   requests: QueueRequest[];
   stats: Stats;
-  queueMode: 'FIFO' | 'LIFO';
+  queueMode: 'FIFO' | 'LIFO' | 'Adaptive LIFO';
   queueTimeout: number;
 }
 
