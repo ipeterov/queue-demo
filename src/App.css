@@ -36,12 +36,34 @@ header {
 header h1 {
   font-size: 1.8rem;
   color: #f8fafc;
-  margin-bottom: 8px;
 }
 
 header p {
   color: #94a3b8;
   font-size: 0.95rem;
+}
+
+.github-link {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: #64748b;
+  text-decoration: none;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.github-link:hover {
+  color: #e2e8f0;
+  background: #1e293b;
+}
+
+.github-link svg {
+  display: block;
 }
 
 .main-content {
