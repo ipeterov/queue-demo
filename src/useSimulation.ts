@@ -26,7 +26,7 @@ export const useSimulation = () => {
     queueTimeout: 5000,
     maxQueueSize: 0, // 0 = unlimited
     isRunning: false,
-    spawnDuration: 10, // default 10 seconds
+    spawnDuration: 60,
   });
 
   const [requests, setRequests] = useState<QueueRequest[]>([]);
