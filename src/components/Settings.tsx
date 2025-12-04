@@ -129,11 +129,14 @@ export const Settings = ({ settings, onChange, onToggle, onStartTimed, onReset }
                 Max Size: {settings.maxQueueSize === 0 ? '∞' : settings.maxQueueSize}
                 <input
                   type="range"
-                  min="0"
-                  max="50"
+                  min="1"
+                  max="51"
                   step="1"
-                  value={settings.maxQueueSize}
-                  onChange={e => onChange({ ...settings, maxQueueSize: parseInt(e.target.value) })}
+                  value={settings.maxQueueSize === 0 ? 51 : settings.maxQueueSize}
+                  onChange={e => {
+                    const val = parseInt(e.target.value);
+                    onChange({ ...settings, maxQueueSize: val >= 51 ? 0 : val });
+                  }}
                 />
               </label>
             </div>
