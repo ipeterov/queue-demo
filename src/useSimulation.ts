@@ -24,6 +24,7 @@ export const useSimulation = () => {
     variation: 0.3,
     queueMode: 'FIFO',
     queueTimeout: 5000,
+    maxQueueSize: 0, // 0 = unlimited
     isRunning: false,
     spawnDuration: 10, // default 10 seconds
   });
@@ -33,6 +34,7 @@ export const useSimulation = () => {
     completed: 0,
     dropped: 0,
     wasted: 0,
+    rejected: 0,
     totalTimes: [],
   });
 
@@ -51,17 +53,29 @@ export const useSimulation = () => {
 
     setRequests(prev => [...prev, newRequest]);
 
-    // After spawn animation, move to queue
+    // After spawn animation, move to queue (or reject if queue is full)
     setTimeout(() => {
-      setRequests(prev =>
-        prev.map(r =>
+      setRequests(prev => {
+        const queuedCount = prev.filter(r => r.status === 'queued').length;
+        const isQueueFull = settings.maxQueueSize > 0 && queuedCount >= settings.maxQueueSize;
+
+        if (isQueueFull) {
+          setStats(s => ({ ...s, rejected: s.rejected + 1 }));
+          return prev.map(r =>
+            r.id === newRequest.id
+              ? { ...r, status: 'rejected' as const }
+              : r
+          );
+        }
+
+        return prev.map(r =>
           r.id === newRequest.id
             ? { ...r, status: 'queued' as const, queuedAt: Date.now() }
             : r
-        )
-      );
+        );
+      });
     }, 800); // spawn animation duration (matches animation)
-  }, [settings.avgProcessingTime, settings.variation]);
+  }, [settings.avgProcessingTime, settings.variation, settings.maxQueueSize]);
 
   // Check for timed out requests - timeout is based on createdAt (total time since spawn)
   const checkTimeouts = useCallback(() => {
@@ -148,7 +162,7 @@ export const useSimulation = () => {
     });
   }, [settings.queueMode]);
 
-  // Clean up completed/dropped/wasted requests after animation
+  // Clean up completed/dropped/wasted/rejected requests after animation
   useEffect(() => {
     const cleanup = setInterval(() => {
       setRequests(prev =>
@@ -160,6 +174,9 @@ export const useSimulation = () => {
             return false;
           }
           if (r.status === 'dropped' && Date.now() - r.createdAt > settings.queueTimeout + 1000) {
+            return false;
+          }
+          if (r.status === 'rejected' && Date.now() - r.createdAt > 1500) {
             return false;
           }
           return true;
@@ -217,7 +234,7 @@ export const useSimulation = () => {
 
   const reset = useCallback(() => {
     setRequests([]);
-    setStats({ completed: 0, dropped: 0, wasted: 0, totalTimes: [] });
+    setStats({ completed: 0, dropped: 0, wasted: 0, rejected: 0, totalTimes: [] });
     processingRef.current = false;
   }, []);
 

@@ -131,6 +131,7 @@ export const SimulationView = ({ requests, stats, queueTimeout }: Props) => {
 
       case 'dropped':
       case 'wasted': // goes to failed zone since client got 504
+      case 'rejected': // queue was full
         return {
           x: zones.failed.x,
           y: zones.failed.y,
@@ -179,7 +180,7 @@ export const SimulationView = ({ requests, stats, queueTimeout }: Props) => {
           </div>
 
           <div className="zone failed-zone">
-            <h4>Failed ({stats.dropped + stats.wasted})</h4>
+            <h4>Failed ({stats.dropped + stats.wasted + stats.rejected})</h4>
             <div className="zone-content">
               <div className="failed-breakdown">
                 <div className="failed-stat">
@@ -189,6 +190,10 @@ export const SimulationView = ({ requests, stats, queueTimeout }: Props) => {
                 <div className="failed-stat">
                   <span className="failed-label">Wasted:</span>
                   <span className="failed-value">{stats.wasted}</span>
+                </div>
+                <div className="failed-stat">
+                  <span className="failed-label rejected">Rejected:</span>
+                  <span className="failed-value rejected">{stats.rejected}</span>
                 </div>
               </div>
             </div>
@@ -209,6 +214,7 @@ export const SimulationView = ({ requests, stats, queueTimeout }: Props) => {
               request.status === 'timed_out_processing' ? zones.processing.width :
               request.status === 'dropped' ? zones.failed.width :
               request.status === 'wasted' ? zones.failed.width :
+              request.status === 'rejected' ? zones.failed.width :
               request.status === 'completed' ? zones.processed.width :
               zones.processing.width
             ) : 100}

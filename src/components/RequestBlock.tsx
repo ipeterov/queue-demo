@@ -81,6 +81,21 @@ export const RequestBlock = ({ request, targetPosition, queueTimeout, width }: P
     }
   }, [request.status]);
 
+  // Rejected animation (queue was full)
+  useEffect(() => {
+    if (!blockRef.current) return;
+
+    if (request.status === 'rejected') {
+      animate(blockRef.current, {
+        scale: [1, 0],
+        opacity: [1, 0],
+        rotate: '-15deg',
+        duration: 800,
+        easing: 'easeInBack',
+      });
+    }
+  }, [request.status]);
+
   // Completion animation
   useEffect(() => {
     if (!blockRef.current) return;
@@ -142,6 +157,8 @@ export const RequestBlock = ({ request, targetPosition, queueTimeout, width }: P
         return '#f87171'; // red - server finished but response was wasted
       case 'dropped':
         return '#f87171';
+      case 'rejected':
+        return '#a855f7'; // purple - queue was full
       case 'completed':
         return '#4ade80';
       default:
@@ -165,6 +182,8 @@ export const RequestBlock = ({ request, targetPosition, queueTimeout, width }: P
       case 'wasted':
         return 25;
       case 'dropped':
+        return 25;
+      case 'rejected':
         return 25;
       case 'queued':
       default:

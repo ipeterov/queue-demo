@@ -78,14 +78,65 @@ header p {
 
 .settings-row {
   display: flex;
-  align-items: center;
-  gap: 24px;
+  align-items: stretch;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-.setting-group {
+.settings-group-container {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 12px;
   flex: 1;
-  min-width: 150px;
+  min-width: 200px;
+}
+
+.settings-group-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.settings-group-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.distribution-preview {
+  margin-top: 4px;
+}
+
+.distribution-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 32px;
+  background: #1e293b;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+.distribution-bar {
+  flex: 1;
+  background: #60a5fa;
+  border-radius: 1px;
+  min-height: 1px;
+}
+
+.distribution-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.setting-group {
+  flex: none;
 }
 
 .setting-group label {
@@ -127,8 +178,45 @@ header p {
 
 .setting-buttons {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  flex-shrink: 0;
+}
+
+.timed-run-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.timed-run-control .timed-btn {
+  flex: 1;
+}
+
+.duration-input {
+  width: 70px;
+  padding: 8px 6px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.duration-input::-webkit-inner-spin-button,
+.duration-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.duration-input::placeholder {
+  color: #64748b;
+}
+
+.duration-unit {
+  font-size: 0.8rem;
+  color: #64748b;
 }
 
 .timed-btn, .toggle-btn, .reset-btn {
@@ -281,6 +369,14 @@ header p {
   color: #f87171;
   font-weight: 600;
   font-family: monospace;
+}
+
+.failed-label.rejected {
+  color: #a855f7;
+}
+
+.failed-value.rejected {
+  color: #a855f7;
 }
 
 .processed-zone {

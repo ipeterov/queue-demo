@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { Settings as SettingsType } from '../types';
 
 interface Props {
@@ -9,95 +10,185 @@ interface Props {
 }
 
 export const Settings = ({ settings, onChange, onToggle, onStartTimed, onReset }: Props) => {
+  // Generate distribution preview
+  const distributionBars = useMemo(() => {
+    const { avgProcessingTime, variation } = settings;
+    const minMultiplier = 1 - variation * 0.9;
+    const maxMultiplier = 1 + variation * 9;
+    const minTime = avgProcessingTime * minMultiplier;
+    const maxTime = avgProcessingTime * maxMultiplier;
+
+    // Create buckets for histogram
+    const numBuckets = 20;
+    const buckets = new Array(numBuckets).fill(0);
+    const samples = 1000;
+
+    for (let i = 0; i < samples; i++) {
+      const random = Math.random();
+      const skewed = Math.pow(random, 1.5);
+      const multiplier = minMultiplier + skewed * (maxMultiplier - minMultiplier);
+      const time = avgProcessingTime * multiplier;
+      const bucketIndex = Math.min(
+        numBuckets - 1,
+        Math.floor(((time - minTime) / (maxTime - minTime)) * numBuckets)
+      );
+      buckets[bucketIndex]++;
+    }
+
+    const maxBucket = Math.max(...buckets);
+    return { buckets, maxBucket, minTime, maxTime };
+  }, [settings.avgProcessingTime, settings.variation]);
+
   return (
     <div className="settings-panel">
       <div className="settings-row">
-        <div className="setting-group">
-          <label>
-            Spawn Rate: {settings.spawnRate.toFixed(1)} req/s
-            <input
-              type="range"
-              min="0.1"
-              max="10"
-              step="0.1"
-              value={settings.spawnRate}
-              onChange={e => onChange({ ...settings, spawnRate: parseFloat(e.target.value) })}
-            />
-          </label>
+        {/* Request generation settings */}
+        <div className="settings-group-container">
+          <div className="settings-group-label">Requests</div>
+          <div className="settings-group-content">
+            <div className="setting-group">
+              <label>
+                Spawn Rate: {settings.spawnRate.toFixed(1)} req/s
+                <input
+                  type="range"
+                  min="0.1"
+                  max="10"
+                  step="0.1"
+                  value={settings.spawnRate}
+                  onChange={e => onChange({ ...settings, spawnRate: parseFloat(e.target.value) })}
+                />
+              </label>
+            </div>
+
+            <div className="setting-group">
+              <label>
+                Processing Time: {(settings.avgProcessingTime / 1000).toFixed(1)}s
+                <input
+                  type="range"
+                  min="100"
+                  max="10000"
+                  step="100"
+                  value={settings.avgProcessingTime}
+                  onChange={e => onChange({ ...settings, avgProcessingTime: parseFloat(e.target.value) })}
+                />
+              </label>
+            </div>
+
+            <div className="setting-group">
+              <label>
+                Variation: {Math.round(settings.variation * 100)}%
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={settings.variation}
+                  onChange={e => onChange({ ...settings, variation: parseFloat(e.target.value) })}
+                />
+              </label>
+            </div>
+
+            <div className="distribution-preview">
+              <div className="distribution-chart">
+                {distributionBars.buckets.map((count, i) => (
+                  <div
+                    key={i}
+                    className="distribution-bar"
+                    style={{ height: `${(count / distributionBars.maxBucket) * 100}%` }}
+                  />
+                ))}
+              </div>
+              <div className="distribution-labels">
+                <span>{(distributionBars.minTime / 1000).toFixed(1)}s</span>
+                <span>{(distributionBars.maxTime / 1000).toFixed(1)}s</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="setting-group">
-          <label>
-            Avg Processing Time: {(settings.avgProcessingTime / 1000).toFixed(1)}s
-            <input
-              type="range"
-              min="100"
-              max="10000"
-              step="100"
-              value={settings.avgProcessingTime}
-              onChange={e => onChange({ ...settings, avgProcessingTime: parseFloat(e.target.value) })}
-            />
-          </label>
+        {/* Queue settings */}
+        <div className="settings-group-container">
+          <div className="settings-group-label">Queue</div>
+          <div className="settings-group-content">
+            <div className="setting-group">
+              <label>
+                Timeout: {(settings.queueTimeout / 1000).toFixed(1)}s
+                <input
+                  type="range"
+                  min="1000"
+                  max="30000"
+                  step="500"
+                  value={settings.queueTimeout}
+                  onChange={e => onChange({ ...settings, queueTimeout: parseFloat(e.target.value) })}
+                />
+              </label>
+            </div>
+
+            <div className="setting-group">
+              <label>
+                Max Size: {settings.maxQueueSize === 0 ? '∞' : settings.maxQueueSize}
+                <input
+                  type="range"
+                  min="0"
+                  max="50"
+                  step="1"
+                  value={settings.maxQueueSize}
+                  onChange={e => onChange({ ...settings, maxQueueSize: parseInt(e.target.value) })}
+                />
+              </label>
+            </div>
+
+            <div className="setting-group">
+              <label>
+                Mode:
+                <select
+                  value={settings.queueMode}
+                  onChange={e => onChange({ ...settings, queueMode: e.target.value as 'FIFO' | 'LIFO' })}
+                >
+                  <option value="FIFO">FIFO</option>
+                  <option value="LIFO">LIFO</option>
+                </select>
+              </label>
+            </div>
+          </div>
         </div>
 
-        <div className="setting-group">
-          <label>
-            Variation: {Math.round(settings.variation * 100)}%
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={settings.variation}
-              onChange={e => onChange({ ...settings, variation: parseFloat(e.target.value) })}
-            />
-          </label>
-        </div>
-
-        <div className="setting-group">
-          <label>
-            Request Timeout: {(settings.queueTimeout / 1000).toFixed(1)}s
-            <input
-              type="range"
-              min="1000"
-              max="30000"
-              step="500"
-              value={settings.queueTimeout}
-              onChange={e => onChange({ ...settings, queueTimeout: parseFloat(e.target.value) })}
-            />
-          </label>
-        </div>
-
-        <div className="setting-group">
-          <label>
-            Queue Mode:
-            <select
-              value={settings.queueMode}
-              onChange={e => onChange({ ...settings, queueMode: e.target.value as 'FIFO' | 'LIFO' })}
+        {/* Control buttons */}
+        <div className="settings-group-container">
+          <div className="settings-group-label">Controls</div>
+          <div className="setting-buttons">
+            <div className="timed-run-control">
+              <button
+                className="timed-btn"
+                onClick={() => onStartTimed(settings.spawnDuration)}
+                disabled={settings.isRunning || settings.spawnDuration === 0}
+              >
+                Run
+              </button>
+              <input
+                type="number"
+                className="duration-input"
+                min="1"
+                max="9999"
+                value={settings.spawnDuration || ''}
+                placeholder="∞"
+                onChange={e => {
+                  const val = e.target.value === '' ? 0 : parseInt(e.target.value);
+                  onChange({ ...settings, spawnDuration: Math.max(0, Math.min(9999, val)) });
+                }}
+              />
+              <span className="duration-unit">sec</span>
+            </div>
+            <button
+              className={`toggle-btn ${settings.isRunning ? 'running' : ''}`}
+              onClick={onToggle}
             >
-              <option value="FIFO">FIFO</option>
-              <option value="LIFO">LIFO</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="setting-buttons">
-          <button
-            className="timed-btn"
-            onClick={() => onStartTimed(60)}
-            disabled={settings.isRunning}
-          >
-            Run 1 min
-          </button>
-          <button
-            className={`toggle-btn ${settings.isRunning ? 'running' : ''}`}
-            onClick={onToggle}
-          >
-            {settings.isRunning ? 'Stop' : 'Run'}
-          </button>
-          <button className="reset-btn" onClick={onReset}>
-            Reset
-          </button>
+              {settings.isRunning ? 'Stop' : 'Run ∞'}
+            </button>
+            <button className="reset-btn" onClick={onReset}>
+              Reset
+            </button>
+          </div>
         </div>
       </div>
     </div>
